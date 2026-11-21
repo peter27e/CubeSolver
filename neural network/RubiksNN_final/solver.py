@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 from finalNN import (faces, movesDict, reset, encode, cksolved, printCube, loadModel,
-                     dense1, relu1, dense2, dense3, relu2)
+                     dense1, relu1, dense2, dense3, relu2, dense4, relu3)
 
 if os.path.exists("cubeModel.npz"):
     loadModel("cubeModel.npz")
@@ -11,10 +11,10 @@ movenames = ["R", "U", "F", "B", "L", "D", "R'", "U'", "F'", "B'", "L'", "D'"]
 IDX = {m: i for i, m in enumerate(movenames)}
 
 def inverse(m):
-    if m.endswith("'"): return m[0]
-    return m + "'"
+    if m.endswith("'"): return m[0]       # R' -> R
+    return m + "'"                        # R  -> R'
 
-INV = np.array([IDX[inverse(m)] for m in movenames])
+INV = np.array([IDX[inverse(m)] for m in movenames])   # [6,7,8,9,10,11,0,1,2,3,4,5]
 
 def legalmask(prev):
     mask = np.ones(len(movenames), dtype=bool)
@@ -30,7 +30,7 @@ def pickmove(logits, prev, greedy=True):
     p /= p.sum()
     return int(np.random.choice(len(p), p=p))
 
-def scramble2(n):# shorter scramble func, non random moves count
+def scramble2(n):  # shorter scramble func, non random moves count
     reset()
     moves = []
     prev = None
@@ -48,9 +48,11 @@ def predictlogits(X):
     dense2.forward(relu1.output)
     relu2.forward(dense2.output)
     dense3.forward(relu2.output)
-    out = dense3.output
+    relu3.forward(dense3.output)
+    dense4.forward(relu3.output)
+    out = dense4.output
     assert out.shape[1] == 12, f"expected 12 outputs, got {out.shape[1]}"
-    return out[0]
+    return out[0]                          # shape (12,)
 
 def ckloop(mM=30, verbose=True):
     mvs = []
