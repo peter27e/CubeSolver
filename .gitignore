@@ -219,3 +219,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 .venv/
+
+# macOS
+.DS_Store
