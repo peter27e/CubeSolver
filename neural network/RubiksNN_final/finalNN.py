@@ -92,20 +92,42 @@ def reset():
 
 def scramble():
     reset()
+    prev = None
     states, moves = [], []
     steps = random.randint(10, 20)
     for i in range(steps):
         m = random.randint(0, 11)
+        while m < 7:
+            if prev == m + 6:
+                m = random.randint(0, 11)
+                if m == prev and m != 11 or m == prev - 6 and m != 11:
+                    m += 1
+                elif m == prev and m == 11 or m == prev - 6 and m == 11:
+                    m -= 1
+                else:
+                    break
+            break
+        while m > 6:
+            if prev == m - 6:
+                m = random.randint(0, 11)
+                if m == prev and m != 11 or m == prev - 6 and m != 11:
+                    m += 1
+                elif m == prev and m == 11 or m == prev - 6 and m == 11:
+                    m -= 1
+                else:
+                    break
+            break
         movesDict[m]()
         states.append(faces.copy())
         moves.append(m)
+        prev = m
     return states, moves
 
 def inverse(m):
-    return (m+6)%12 #for sm
+    return (m+6)%12 #for softmax
 
 def encode(state):
-    return np.eye(6)[state].flatten() #one hot 
+    return np.eye(6)[state].flatten() #one hot
 
 def cksolved():
     return np.array_equal(faces, solved)
@@ -140,7 +162,7 @@ def printCube(faces):
 print(scramble())
 printCube(faces)
 #connecting vars
-nScrambles = 4000
+nScrambles = 50000
 xlist, ylist = [], []
 for _ in range(nScrambles):
     states, moves = scramble()
@@ -214,12 +236,9 @@ class lossCategoricalCrossEntropy(Loss):
         return negLoLikelyhood
 
 
-
-
-
 #updater
 class optimizerSGD:
-    def __init__(self, lr=0.2):
+    def __init__(self, lr=0.1):
         self.lr = lr
 
     def update(self, layer):
@@ -231,27 +250,32 @@ class optimizerSGD:
 def saveModel(path="cubeModel.npz"):
     np.savez(path, w1=dense1.weights, b1=dense1.biases,
                    w2=dense2.weights, b2=dense2.biases, 
-                   w3=dense3.weights, b3=dense3.biases)
+                   w3=dense3.weights, b3=dense3.biases,
+                   w4=dense4.weights, b4=dense4.biases)
 
 def loadModel(path="cubeModel.npz"):
     data = np.load(path)
     dense1.weights, dense1.biases = data["w1"], data["b1"]
     dense2.weights, dense2.biases = data["w2"], data["b2"]
     dense3.weights, dense3.biases = data["w3"], data["b3"]
+    dense4.weights, dense4.biases = data["w4"], data["b4"]
 
-dense1 = layerDense(324, 1028)
+
+dense1 = layerDense(324, 512)
 relu1 = activationReLU()
-dense2 = layerDense(1028, 2056)
+dense2 = layerDense(512, 256)
 relu2 = activationReLU()
-dense3 = layerDense(2056, 12)
+dense3 = layerDense(256, 128)
+relu3 = activationReLU()
+dense4 = layerDense(128, 12)
 lossAct = softmaxCrossEntropy()
-optimizer = optimizerSGD(lr=0.2)
+optimizer = optimizerSGD(lr=0.1)
 i=0
 acc = 0
 
 #trsining loop shape
 if __name__ == "__main__":
-    while acc<0.7:
+    while acc<0.8:
         i+=1
         #forward
         dense1.forward(X)
@@ -259,12 +283,16 @@ if __name__ == "__main__":
         dense2.forward(relu1.output)
         relu2.forward(dense2.output)
         dense3.forward(relu2.output)
-        loss = lossAct.forward(dense3.output, y)
+        relu3.forward(dense3.output)
+        dense4.forward(relu3.output)
+        loss = lossAct.forward(dense4.output, y)
 
 
         #backprop
         lossAct.backward(y)
-        dense3.backward(lossAct.dinputs)
+        dense4.backward(lossAct.dinputs)
+        relu3.backward(dense4.dinputs)
+        dense3.backward(relu3.dinputs)
         relu2.backward(dense3.dinputs)
         dense2.backward(relu2.dinputs)
         relu1.backward(dense2.dinputs)
@@ -275,8 +303,9 @@ if __name__ == "__main__":
         optimizer.update(dense1)
         optimizer.update(dense2)
         optimizer.update(dense3)
+        optimizer.update(dense4)
 
         acc = np.mean(np.argmax(lossAct.output, axis=1) == y)
         print(i, loss, acc)
-    saveModel()
+        saveModel()
 
