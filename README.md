@@ -1,4 +1,9 @@
-
+> [!WARNING]
+> `cubeModel.npz` is outdated. It was trained on the old 3-layer network and doesn't work with the current
+> 4-layer `finalNN.py`, so `solver.py` crashes with `KeyError: 'w4'` while it's there. No newly trained model yet,
+> coming soon. Until then: delete `cubeModel.npz`, run `finalNN.py` from the `RubiksNN_final` folder to train your
+> own (it saves a new `cubeModel.npz` after every cycle, so you can stop whenever), then run `solver.py`.
+> Training is slow, expect 20-30 seconds per cycle.
 
 Hello, i made a neural network ,using only numpy, random, and os, with the goal for it to solve a rubiks cube.
 
