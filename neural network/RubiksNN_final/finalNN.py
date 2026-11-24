@@ -92,13 +92,27 @@ def reset():
 
 def scramble():
     reset()
+    changed = False
+    repetition_count = None
     prev = None
     states, moves = [], []
     steps = random.randint(10, 20)
     for i in range(steps):
         m = random.randint(0, 11)
-        while m < 7:
+        while m == prev:
+            if repetition_count == 0:
+                repetition_count = 2
+                changed = True
+            elif repetition_count == 2 and changed == False:
+                repetition_count += 1
+                changed = True
+            elif repetition_count == 3 and changed == False:
+                m = random.choice([x for x in range(12) if x != prev ])
+                break
+        changed = False
+        while m < 6:
             if prev == m + 6:
+                prev = m
                 m = random.randint(0, 11)
                 if m == prev and m != 11 or m == prev - 6 and m != 11:
                     m += 1
@@ -107,8 +121,9 @@ def scramble():
                 else:
                     break
             break
-        while m > 6:
+        while m >= 6:
             if prev == m - 6:
+                prev = m
                 m = random.randint(0, 11)
                 if m == prev and m != 11 or m == prev - 6 and m != 11:
                     m += 1
