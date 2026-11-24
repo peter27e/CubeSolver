@@ -162,7 +162,7 @@ def printCube(faces):
 print(scramble())
 printCube(faces)
 #connecting vars
-nScrambles = 50000
+nScrambles = 65536
 xlist, ylist = [], []
 for _ in range(nScrambles):
     states, moves = scramble()
